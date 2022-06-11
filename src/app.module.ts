@@ -4,6 +4,7 @@ import { DatabaseConfigModule } from "./database/database.module";
 import { DatabaseConfigService } from "./database/database.config";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ConfigModule } from "@nestjs/config";
+import { AuthModule } from "./auth/auth.module";
 
 @Module({
     controllers: [],
@@ -17,7 +18,8 @@ import { ConfigModule } from "@nestjs/config";
             inject: [DatabaseConfigService],
             useFactory: async (configService: DatabaseConfigService) => configService.getMongoConfig()
         }),
-        UsersModule
+        UsersModule,
+        AuthModule
     ]
 })
 export class AppModule {
