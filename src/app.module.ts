@@ -5,6 +5,7 @@ import { DatabaseConfigService } from "./database/database.config";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from "./auth/auth.module";
+import { FilesModule } from './files/files.module';
 
 @Module({
     controllers: [],
@@ -19,7 +20,8 @@ import { AuthModule } from "./auth/auth.module";
             useFactory: async (configService: DatabaseConfigService) => configService.getMongoConfig()
         }),
         UsersModule,
-        AuthModule
+        AuthModule,
+        FilesModule
     ]
 })
 export class AppModule {
