@@ -6,6 +6,7 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from "./auth/auth.module";
 import { FilesModule } from './files/files.module';
+import { LikesModule } from "./likes/likes.module";
 
 @Module({
     controllers: [],
@@ -21,7 +22,8 @@ import { FilesModule } from './files/files.module';
         }),
         UsersModule,
         AuthModule,
-        FilesModule
+        LikesModule,
+        FilesModule,
     ]
 })
 export class AppModule {
