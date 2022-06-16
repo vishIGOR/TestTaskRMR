@@ -9,6 +9,7 @@ import { FilesModule } from './files/files.module';
 import { LikesModule } from "./likes/likes.module";
 import { WebscrapingModule } from "./webscraping/webscraping.module";
 import { ErrorsModule } from "./errors/errors.module";
+import { PostsModule } from './posts/posts.module';
 
 @Module({
     controllers: [],
@@ -27,7 +28,8 @@ import { ErrorsModule } from "./errors/errors.module";
         UsersModule,
         AuthModule,
         LikesModule,
-        FilesModule
+        FilesModule,
+        PostsModule
     ]
 })
 export class AppModule {
