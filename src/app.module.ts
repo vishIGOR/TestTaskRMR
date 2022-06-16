@@ -7,6 +7,8 @@ import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from "./auth/auth.module";
 import { FilesModule } from './files/files.module';
 import { LikesModule } from "./likes/likes.module";
+import { WebscrapingModule } from "./webscraping/webscraping.module";
+import { ErrorsModule } from "./errors/errors.module";
 
 @Module({
     controllers: [],
@@ -20,10 +22,12 @@ import { LikesModule } from "./likes/likes.module";
             inject: [DatabaseConfigService],
             useFactory: async (configService: DatabaseConfigService) => configService.getMongoConfig()
         }),
+        WebscrapingModule,
+        ErrorsModule,
         UsersModule,
         AuthModule,
         LikesModule,
-        FilesModule,
+        FilesModule
     ]
 })
 export class AppModule {
