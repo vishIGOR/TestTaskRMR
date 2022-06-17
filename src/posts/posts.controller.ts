@@ -32,8 +32,8 @@ export class PostsController {
     async getPosts(@Request() req, @Query("limit") limit: number, @Query("from") from: number, @Res() res: Response) {
         const session = await this._mongoConnection.startSession();
         try {
-            let postDtos = await this._postsService.getPosts(req.userId, limit, from);
-            return res.status(HttpStatus.OK).send(postDtos);
+            let postDtosWithPagination = await this._postsService.getPosts(req.userId, limit, from);
+            return res.status(HttpStatus.OK).send(postDtosWithPagination);
         } catch (error) {
             if (error instanceof HttpException)
                 throw error;
@@ -107,12 +107,6 @@ export class PostsController {
         } finally {
             await session.endSession();
         }
-    }
-
-    @HttpPost("/test/:link")
-    async test(@Res() res: Response, @Param("link") link: string ) {
-        let result = await parser(link);
-        return res.status(HttpStatus.OK).send(JSON.stringify(result, null, 3));
     }
 
 }

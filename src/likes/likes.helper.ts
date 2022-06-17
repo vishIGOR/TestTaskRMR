@@ -34,11 +34,11 @@ export class LikesHelper implements ILikesHelper {
         return false;
     }
 
-    async deleteLike(like: Like): Promise<void> {
+    async deleteLike(likeId: string): Promise<void> {
         try {
-            await this._likeModel.findOneAndDelete({ userId: like.userId, postId: like.postId });
+            await this._likeModel.findByIdAndDelete(likeId);
         } catch (error) {
-            throw new InternalServerErrorException("Unexpected database error");
+            this._errorsHelper.throwInvalidIdExceptionWhenCaughtCastError(error);
         }
     }
 

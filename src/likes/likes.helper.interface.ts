@@ -8,7 +8,7 @@ export interface ILikesHelper {
 
     isLikeExists(userId: string, postId: string): Promise<boolean>;
 
-    deleteLike(like: Like): Promise<void>;
+    deleteLike(likeId:string): Promise<void>;
 }
 
 export const ILikesHelper = Symbol("ILikesHelper");

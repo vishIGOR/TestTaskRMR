@@ -10,6 +10,8 @@ import { LikesModule } from "./likes/likes.module";
 import { WebscrapingModule } from "./webscraping/webscraping.module";
 import { ErrorsModule } from "./errors/errors.module";
 import { PostsModule } from './posts/posts.module';
+import { resolve } from "path";
+import { ServeStaticModule } from "@nestjs/serve-static";
 
 @Module({
     controllers: [],
@@ -22,6 +24,10 @@ import { PostsModule } from './posts/posts.module';
         MongooseModule.forRootAsync({
             inject: [DatabaseConfigService],
             useFactory: async (configService: DatabaseConfigService) => configService.getMongoConfig()
+        }),
+        ServeStaticModule.forRoot({
+            rootPath: resolve(__dirname, "uploads"),
+            serveRoot: "/uploads"
         }),
         WebscrapingModule,
         ErrorsModule,

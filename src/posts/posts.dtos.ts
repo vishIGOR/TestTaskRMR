@@ -28,3 +28,17 @@ export class GetPostDetailedDataDto extends GetPostDto {
     @ApiProperty()
     previews: SitePreviewDataDto[];
 }
+
+export class PagesData {
+    @ApiProperty()
+    nextSkip: number = null;
+    @ApiProperty()
+    totalNumberOfPages: number = null;
+}
+
+export class GetPostsDataWithPaginationDto {
+    @ApiProperty()
+    pagesData: PagesData;
+    @ApiProperty()
+    posts: GetPostDto[];
+}

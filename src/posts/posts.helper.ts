@@ -75,4 +75,27 @@ export class PostsHelper implements IPostsHelper {
 
         return posts;
     }
+
+    async decrementLikes(id: string): Promise<void> {
+        let post = this.getPostById(id);
+        try {
+            await this._postModel.findOneAndUpdate({ _id: id }, { likes: (await post).likes - 1 });
+        } catch (error) {
+            this._errorsHelper.throwInvalidIdExceptionWhenCaughtCastError(error);
+        }
+
+    }
+
+    async incrementLikes(id: string): Promise<void> {
+        let post = this.getPostById(id);
+        try {
+            await this._postModel.findOneAndUpdate({ _id: id }, { likes: (await post).likes + 1 });
+        } catch (error) {
+            this._errorsHelper.throwInvalidIdExceptionWhenCaughtCastError(error);
+        }
+    }
+
+    async getNumberOfPosts(): Promise<number> {
+        return this._postModel.count();
+    }
 }

@@ -9,8 +9,13 @@ import { IPostsService } from "./posts.service.interface";
 import { InjectModel } from "@nestjs/mongoose";
 import { Post, SitePreview } from "../schemas/posts.schema";
 import { ClientSession, Model, Schema } from "mongoose";
-import { CreatePostDto, GetPostDetailedDataDto, GetPostDto } from "./posts.dtos";
-import { Express } from "express";
+import {
+    CreatePostDto,
+    GetPostDetailedDataDto,
+    GetPostDto,
+    GetPostsDataWithPaginationDto,
+    PagesData
+} from "./posts.dtos";
 import { IFilesService } from "../files/files.service.interface";
 import { IPostsHelper } from "./posts.helper.interface";
 import { ILikesHelper } from "../likes/likes.helper.interface";
@@ -101,7 +106,15 @@ export class PostsService implements IPostsService {
 
     }
 
-    async getPosts(userId: string, limit: number | null = null, from: number | null = 0): Promise<GetPostDto[]> {
+    async getPosts(userId: string, limit: number | null = null, from: number | null = 0): Promise<GetPostsDataWithPaginationDto> {
+        if (typeof limit == "string")
+            limit = Number.parseInt(limit);
+        if (typeof from == "string")
+            from = Number.parseInt(from);
+
+        let pagesData = new PagesData();
+        let postsWithPagination = new GetPostsDataWithPaginationDto();
+
         let posts: Post[] = await this._postsHelper.getNewestPosts(limit, from);
         let postDtos: GetPostDto[] = [];
         for (const post of posts) {
@@ -110,7 +123,16 @@ export class PostsService implements IPostsService {
                 currentPostDto.isLikedByCurrentUser = true;
             postDtos.push(currentPostDto);
         }
-        return postDtos;
+
+        if (limit) {
+            let numberOfPosts = await this._postsHelper.getNumberOfPosts();
+            pagesData.totalNumberOfPages = numberOfPosts / limit;
+            pagesData.nextSkip = limit + from < numberOfPosts ? limit + from : null;
+        }
+
+        postsWithPagination.posts = postDtos;
+        postsWithPagination.pagesData = pagesData;
+        return postsWithPagination;
     }
 
     async getPostDetailedData(userId: string, postId: string): Promise<GetPostDetailedDataDto> {
@@ -127,17 +149,22 @@ export class PostsService implements IPostsService {
     }
 
     async likePost(userId: string, postId: string, session: ClientSession): Promise<void> {
-        let post = await this._postsHelper.getPostById(postId);
-        if (!post) {
+        let post = this._postsHelper.getPostById(postId);
+        if (!(await post)) {
             throw new BadRequestException("Post with this id doesn't exists");
         }
 
-        let like = await this._likesHelper.getLike(userId, postId);
-        if (like) {
-            await this._likesHelper.deleteLike(like);
-            return;
+        let like = this._likesHelper.getLike(userId, postId);
+        let promises = [];
+        if ((await like)) {
+            promises.push(this._likesHelper.deleteLike((await like)._id));
+            promises.push(this._postsHelper.decrementLikes(postId));
+        } else {
+            promises.push(this._likesHelper.createLike(userId, postId, session));
+            promises.push(this._postsHelper.incrementLikes(postId));
         }
-        await this._likesHelper.createLike(userId, postId, session);
-
+        for (let promise of promises) {
+            await promise;
+        }
     }
 }
