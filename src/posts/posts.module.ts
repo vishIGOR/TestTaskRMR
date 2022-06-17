@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module } from "@nestjs/common";
 import { IPostsHelper } from "./posts.helper.interface";
 import { JwtService } from "@nestjs/jwt";
 import { PostsHelper } from "./posts.helper";
@@ -9,12 +9,20 @@ import { LikesModule } from "../likes/likes.module";
 import { ErrorsModule } from "../errors/errors.module";
 import { WebscrapingModule } from "../webscraping/webscraping.module";
 import { Post, PostSchema } from "../schemas/posts.schema";
+import { PostsController } from "./posts.controller";
+import { PostsService } from "./posts.service";
+import { IPostsService } from "./posts.service.interface";
 
 @Module({
+    controllers: [PostsController],
     providers: [
         {
             provide: IPostsHelper,
             useClass: PostsHelper
+        },
+        {
+            provide: IPostsService,
+            useClass: PostsService
         },
         JwtService
     ],
@@ -29,4 +37,5 @@ import { Post, PostSchema } from "../schemas/posts.schema";
         WebscrapingModule
     ]
 })
-export class PostsModule {}
+export class PostsModule {
+}
