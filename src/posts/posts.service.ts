@@ -3,7 +3,7 @@ import {
     ForbiddenException,
     Inject,
     Injectable,
-    InternalServerErrorException
+    InternalServerErrorException, NotFoundException
 } from "@nestjs/common";
 import { IPostsService } from "./posts.service.interface";
 import { InjectModel } from "@nestjs/mongoose";
@@ -89,7 +89,7 @@ export class PostsService implements IPostsService {
     async deletePost(userId: string, postId: string): Promise<void> {
         let post = await this._postsHelper.getPostById(postId);
         if (!post) {
-            throw new BadRequestException("Post with this id doesn't exist");
+            throw new NotFoundException("Post with this id doesn't exist");
         }
         if (post.authorId.toString() !== userId) {
             throw new ForbiddenException("Authorized user isn't an author of this post");
@@ -139,7 +139,7 @@ export class PostsService implements IPostsService {
         let post = await this._postsHelper.getPostById(postId);
 
         if (!post) {
-            throw new BadRequestException("Post with this id doesn't exists");
+            throw new NotFoundException("Post with this id doesn't exists");
         }
 
         let postDto = this._postsHelper.getPostDetailedDataDtoFromModel(post);
@@ -151,7 +151,7 @@ export class PostsService implements IPostsService {
     async likePost(userId: string, postId: string, session: ClientSession): Promise<void> {
         let post = this._postsHelper.getPostById(postId);
         if (!(await post)) {
-            throw new BadRequestException("Post with this id doesn't exists");
+            throw new NotFoundException("Post with this id doesn't exists");
         }
 
         let like = this._likesHelper.getLike(userId, postId);

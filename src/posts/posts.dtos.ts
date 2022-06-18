@@ -1,9 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { SitePreviewDataDto } from "../webscraping/webscraping.dtos";
+import { IsNotEmpty } from "class-validator";
 
 export class CreatePostDto {
     @ApiProperty()
     message: string;
+    @ApiProperty({ type: 'array', items: { type: 'string', format: 'binary' } })
+    files: any[];
 }
 
 export class GetPostDto {
@@ -39,6 +42,6 @@ export class PagesData {
 export class GetPostsDataWithPaginationDto {
     @ApiProperty()
     pagesData: PagesData;
-    @ApiProperty()
+    @ApiProperty({ type: [GetPostDto] })
     posts: GetPostDto[];
 }
