@@ -26,8 +26,8 @@ export class JwtAuthGuard implements CanActivate {
                 throw new UnauthorizedException({ message: "User is not authorized" });
             }
 
-            const user = this._jwtService.verify(token, {secret: process.env.PRIVATE_KEY});
-            req.user = user;
+            const user = this._jwtService.verify(token, { secret: process.env.PRIVATE_KEY });
+
             return true;
         } catch (error) {
             throw new UnauthorizedException({ message: "User is not authorized" });
@@ -44,9 +44,17 @@ export class GetIdFromAuthGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
         const req = context.switchToHttp().getRequest();
         try {
-            const authHeader = req.headers.authorization;
-            const bearer = authHeader.split(" ")[0];
-            const token = authHeader.split(" ")[1];
+            let authHeader;
+            let bearer;
+            let token;
+            try {
+                authHeader = req.headers.authorization;
+                bearer = authHeader.split(" ")[0];
+                token = authHeader.split(" ")[1];
+            } catch {
+                req.userId = null;
+                return true;
+            }
 
             if (bearer !== "Bearer" || !token) {
                 req.userId = null;
@@ -57,7 +65,7 @@ export class GetIdFromAuthGuard implements CanActivate {
             req.userId = userPayload.id;
 
             return true;
-        } catch (e) {
+        } catch (error) {
             throw new HttpException("Unexpected authguard error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
