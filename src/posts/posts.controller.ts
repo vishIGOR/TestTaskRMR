@@ -2,13 +2,18 @@ import {
     Body,
     Controller,
     Delete,
-    Get, HttpException, HttpStatus,
+    Get,
+    HttpException,
+    HttpStatus,
     Inject,
     Param,
     Request,
-    Post as HttpPost, Res,
-    UploadedFiles, UseGuards,
-    UseInterceptors, Put, Query, ParseIntPipe
+    Post as HttpPost,
+    Res,
+    UseGuards,
+    UseInterceptors,
+    Query,
+    BadRequestException, UploadedFiles
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { InjectConnection } from "@nestjs/mongoose";
@@ -18,7 +23,7 @@ import { CreatePostDto, GetPostDetailedDataDto, GetPostsDataWithPaginationDto } 
 import { Response } from "express";
 import { GetIdFromAuthGuard, JwtAuthGuard } from "../auth/auth.guards";
 import { FilesInterceptor } from "@nestjs/platform-express";
-import { FilesUploadDto } from "../files/files.dtos";
+import { isInt } from "class-validator";
 
 @Controller("posts")
 @ApiTags("Posts")
@@ -43,18 +48,17 @@ export class PostsController {
     @ApiResponse({ status: 500, description: "Unexpected server error" })
     @ApiQuery({ name: "limit", required: false })
     @ApiQuery({ name: "from", required: false })
-    async getPosts(@Request() req, @Query("limit", ParseIntPipe) limit: number, @Query("from", ParseIntPipe) from: number, @Res() res: Response) {
-        const session = await this._mongoConnection.startSession();
-        try {
-            let postDtosWithPagination = await this._postsService.getPosts(req.userId, limit, from);
-            return res.status(HttpStatus.OK).send(postDtosWithPagination);
-        } catch (error) {
-            if (error instanceof HttpException)
-                throw error;
-            throw new HttpException("Unexpected server error", HttpStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            await session.endSession();
-        }
+    async getPosts(@Request() req, @Query("limit") limit: number, @Query("from") from: number, @Res() res: Response) {
+        if ((!isInt(limit) && limit) || (!isInt(from) && from))
+            throw new BadRequestException("Parameters 'Limit' or 'from' are not number");
+
+        if (typeof limit == "string")
+            limit = Number.parseInt(limit);
+        if (typeof from == "string")
+            from = Number.parseInt(from);
+
+        let postDtosWithPagination = await this._postsService.getPosts(req.userId, limit, from);
+        return res.status(HttpStatus.OK).send(postDtosWithPagination);
     }
 
     @HttpPost("/")
@@ -62,7 +66,10 @@ export class PostsController {
     @UseInterceptors(FilesInterceptor("files", 10))
     @ApiOperation({
         summary: "Create new post",
-        description: "Only for authorized users.\n Max number of files - 10.\n Previews will be created for all urls in message."
+        description: "Only for authorized users.\n Max number of files - 10.\n Previews will be created for all " +
+            "urls in message. You can't add files in this endpoint in the swagger because there are no features " +
+            "for uploading files and body parameters at the same time (I know about one but it's a crutch and this " +
+            "solution conflicts with OOP."
     })
     @ApiConsumes("multipart/form-data")
     @ApiResponse({
@@ -70,22 +77,16 @@ export class PostsController {
         description: "The post was created successfully",
         type: GetPostDetailedDataDto
     })
-    //TODO
     @ApiResponse({ status: 400, description: "Some validation error" })
     @ApiResponse({ status: 401, description: "User is not authorized" })
     @ApiResponse({ status: 500, description: "Unexpected server error" })
-    async createPost(@Request() req, @Body() createPostDto: CreatePostDto, @Res() res: Response) {
+    async createPost(@Request() req, @Body() createPostDto: CreatePostDto, @UploadedFiles() files, @Res() res: Response) {
         const session = await this._mongoConnection.startSession();
-        try {
-            let createdPost = await this._postsService.createPost(req.userId, createPostDto, createPostDto.files, session);
-            return res.status(HttpStatus.CREATED).send(createdPost);
-        } catch (error) {
-            if (error instanceof HttpException)
-                throw error;
-            throw new HttpException("Unexpected server error", HttpStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            await session.endSession();
-        }
+
+        let createdPost = await this._postsService.createPost(req.userId, createPostDto, files, session);
+        return res.status(HttpStatus.CREATED).send(createdPost);
+
+        await session.endSession();
     }
 
     @UseGuards(GetIdFromAuthGuard)
@@ -102,17 +103,8 @@ export class PostsController {
     @ApiResponse({ status: 404, description: "Post with this id doesn't exists" })
     @ApiResponse({ status: 500, description: "Unexpected server error" })
     async getDetailedPostInformation(@Request() req, @Param("id") id: string, @Res() res: Response) {
-        const session = await this._mongoConnection.startSession();
-        try {
-            let postDetailedData = await this._postsService.getPostDetailedData(req.userId, id);
-            return res.status(HttpStatus.OK).send(postDetailedData);
-        } catch (error) {
-            if (error instanceof HttpException)
-                throw error;
-            throw new HttpException("Unexpected server error", HttpStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            await session.endSession();
-        }
+        let postDetailedData = await this._postsService.getPostDetailedData(req.userId, id);
+        return res.status(HttpStatus.OK).send(postDetailedData);
     }
 
     @UseGuards(JwtAuthGuard, GetIdFromAuthGuard)
@@ -130,17 +122,8 @@ export class PostsController {
     @ApiResponse({ status: 404, description: "Post with this id doesn't exists" })
     @ApiResponse({ status: 500, description: "Unexpected server error" })
     async deletePost(@Request() req, @Param("id") id: string, @Res() res: Response) {
-        const session = await this._mongoConnection.startSession();
-        try {
-            await this._postsService.deletePost(req.userId, id);
-            return res.status(HttpStatus.OK).send();
-        } catch (error) {
-            if (error instanceof HttpException)
-                throw error;
-            throw new HttpException("Unexpected server error", HttpStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            await session.endSession();
-        }
+        await this._postsService.deletePost(req.userId, id);
+        return res.status(HttpStatus.OK).send();
     }
 
     @UseGuards(JwtAuthGuard, GetIdFromAuthGuard)
@@ -155,16 +138,11 @@ export class PostsController {
     @ApiResponse({ status: 500, description: "Unexpected server error" })
     async setLike(@Request() req, @Param("id") id: string, @Res() res: Response) {
         const session = await this._mongoConnection.startSession();
-        try {
-            await this._postsService.likePost(req.userId, id, session);
-            return res.status(HttpStatus.OK).send();
-        } catch (error) {
-            if (error instanceof HttpException)
-                throw error;
-            throw new HttpException("Unexpected server error", HttpStatus.INTERNAL_SERVER_ERROR);
-        } finally {
-            await session.endSession();
-        }
+
+        await this._postsService.likePost(req.userId, id, session);
+        return res.status(HttpStatus.OK).send();
+
+        await session.endSession();
     }
 
 }

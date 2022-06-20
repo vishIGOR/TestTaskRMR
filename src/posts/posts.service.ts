@@ -20,6 +20,7 @@ import { IFilesService } from "../files/files.service.interface";
 import { IPostsHelper } from "./posts.helper.interface";
 import { ILikesHelper } from "../likes/likes.helper.interface";
 import { IWebscrapingHelper } from "../webscraping/webscraping.helper.interface";
+import { isInt } from "class-validator";
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -106,12 +107,7 @@ export class PostsService implements IPostsService {
 
     }
 
-    async getPosts(userId: string, limit: number | null = null, from: number | null = 0): Promise<GetPostsDataWithPaginationDto> {
-        if (typeof limit == "string")
-            limit = Number.parseInt(limit);
-        if (typeof from == "string")
-            from = Number.parseInt(from);
-
+    async getPosts(userId: string, limit: number = null, from: number = 0): Promise<GetPostsDataWithPaginationDto> {
         let pagesData = new PagesData();
         let postsWithPagination = new GetPostsDataWithPaginationDto();
 
@@ -167,4 +163,9 @@ export class PostsService implements IPostsService {
             await promise;
         }
     }
+
+    // private isInt(str: string): boolean {
+    //     var n = Math.floor(Number(str));
+    //     return n !== Infinity && String(n) === str && n >= 0;
+    // }
 }
