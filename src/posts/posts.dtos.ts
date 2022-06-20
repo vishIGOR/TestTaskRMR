@@ -39,6 +39,6 @@ export class PagesData {
 export class GetPostsDataWithPaginationDto {
     @ApiProperty()
     pagesData: PagesData;
-    @ApiProperty()
+    @ApiProperty({ type: [GetPostDto] })
     posts: GetPostDto[];
 }

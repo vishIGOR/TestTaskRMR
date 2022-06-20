@@ -3,7 +3,7 @@ import {
     ForbiddenException,
     Inject,
     Injectable,
-    InternalServerErrorException
+    InternalServerErrorException, NotFoundException
 } from "@nestjs/common";
 import { IPostsService } from "./posts.service.interface";
 import { InjectModel } from "@nestjs/mongoose";
@@ -20,6 +20,7 @@ import { IFilesService } from "../files/files.service.interface";
 import { IPostsHelper } from "./posts.helper.interface";
 import { ILikesHelper } from "../likes/likes.helper.interface";
 import { IWebscrapingHelper } from "../webscraping/webscraping.helper.interface";
+import { isInt } from "class-validator";
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -89,7 +90,7 @@ export class PostsService implements IPostsService {
     async deletePost(userId: string, postId: string): Promise<void> {
         let post = await this._postsHelper.getPostById(postId);
         if (!post) {
-            throw new BadRequestException("Post with this id doesn't exist");
+            throw new NotFoundException("Post with this id doesn't exist");
         }
         if (post.authorId.toString() !== userId) {
             throw new ForbiddenException("Authorized user isn't an author of this post");
@@ -106,12 +107,7 @@ export class PostsService implements IPostsService {
 
     }
 
-    async getPosts(userId: string, limit: number | null = null, from: number | null = 0): Promise<GetPostsDataWithPaginationDto> {
-        if (typeof limit == "string")
-            limit = Number.parseInt(limit);
-        if (typeof from == "string")
-            from = Number.parseInt(from);
-
+    async getPosts(userId: string, limit: number = null, from: number = 0): Promise<GetPostsDataWithPaginationDto> {
         let pagesData = new PagesData();
         let postsWithPagination = new GetPostsDataWithPaginationDto();
 
@@ -139,7 +135,7 @@ export class PostsService implements IPostsService {
         let post = await this._postsHelper.getPostById(postId);
 
         if (!post) {
-            throw new BadRequestException("Post with this id doesn't exists");
+            throw new NotFoundException("Post with this id doesn't exists");
         }
 
         let postDto = this._postsHelper.getPostDetailedDataDtoFromModel(post);
@@ -151,7 +147,7 @@ export class PostsService implements IPostsService {
     async likePost(userId: string, postId: string, session: ClientSession): Promise<void> {
         let post = this._postsHelper.getPostById(postId);
         if (!(await post)) {
-            throw new BadRequestException("Post with this id doesn't exists");
+            throw new NotFoundException("Post with this id doesn't exists");
         }
 
         let like = this._likesHelper.getLike(userId, postId);
@@ -167,4 +163,9 @@ export class PostsService implements IPostsService {
             await promise;
         }
     }
+
+    // private isInt(str: string): boolean {
+    //     var n = Math.floor(Number(str));
+    //     return n !== Infinity && String(n) === str && n >= 0;
+    // }
 }
