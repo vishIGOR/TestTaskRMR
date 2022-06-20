@@ -9,7 +9,7 @@ async function start() {
     const app = await NestFactory.create(AppModule);
 
     app.useGlobalPipes(new ValidationPipe({
-        whitelist: true
+        transform: true
     }));
     app.useGlobalInterceptors(new ServerErrorsInterceptor());
 

@@ -1,5 +1,4 @@
-import { User } from "../../schemas/users.schema";
-
+import { User } from "../../users/users.schema";
 
 export interface ITokensHelper{
     generateRefreshToken(): string

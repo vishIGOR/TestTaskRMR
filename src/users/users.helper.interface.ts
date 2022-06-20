@@ -1,4 +1,4 @@
-import { User } from "../schemas/users.schema";
+import { User } from "./users.schema";
 
 
 export interface IUsersHelper{

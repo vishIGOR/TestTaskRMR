@@ -1,7 +1,7 @@
 import { ITokensHelper } from "./tokens.helper.interface";
 import { Injectable } from "@nestjs/common";
 import { randomBytes } from "crypto";
-import { User } from "../../schemas/users.schema";
+import { User } from "../../users/users.schema";
 import { JwtService } from "@nestjs/jwt";
 
 @Injectable()

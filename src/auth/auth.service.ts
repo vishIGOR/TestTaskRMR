@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { User } from "../schemas/users.schema";
+import { User } from "../users/users.schema";
 import { ClientSession, Model } from "mongoose";
 import { LoginUserDto, RegisterUserDto } from "../users/users.dtos";
 import { IAuthService } from "./auth.service.interface";

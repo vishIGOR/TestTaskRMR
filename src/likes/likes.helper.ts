@@ -2,7 +2,7 @@ import { Inject, Injectable, InternalServerErrorException } from "@nestjs/common
 import { ILikesHelper } from "./likes.helper.interface";
 import { InjectModel } from "@nestjs/mongoose";
 import { ClientSession, Model, Error } from "mongoose";
-import { Like } from "../schemas/likes.schema";
+import { Like } from "./likes.schema";
 import { IErrorsHelper } from "../errors/errors.helper.interface";
 
 
@@ -15,11 +15,11 @@ export class LikesHelper implements ILikesHelper {
     async getLike(userId: string, postId: string): Promise<Like> {
         let like;
         try {
-            like = await this._likeModel.findOne({ userId: userId, postId: postId });
+            like = this._likeModel.findOne({ userId: userId, postId: postId });
         } catch (error) {
             return this._errorsHelper.returnNullWhenCaughtCastError(error);
         }
-        return like;
+        return await like;
     }
 
     async isLikeExists(userId: string, postId: string): Promise<boolean> {
@@ -53,5 +53,9 @@ export class LikesHelper implements ILikesHelper {
         } catch (error) {
             throw new InternalServerErrorException(error);
         }
+    }
+
+    async deleteLikes(postId: string): Promise<void> {
+        await this._likeModel.deleteMany({ postId: postId });
     }
 }
