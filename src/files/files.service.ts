@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import {
+    HttpException,
+    HttpStatus,
+    Injectable,
+    InternalServerErrorException,
+    UnsupportedMediaTypeException
+} from "@nestjs/common";
 import { IFilesService } from "./files.service.interface";
 import { resolve, join, parse } from "path";
 import { existsSync, mkdirSync } from "fs";
@@ -12,24 +18,25 @@ export class FilesService implements IFilesService {
         try {
             await unlink(filePath);
         } catch (error) {
-            throw new HttpException("Error while deleting file with name " + filename, HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new InternalServerErrorException("Error while deleting file with name " + filename);
         }
     }
 
     async createFiles(files): Promise<string[]> {
-        let fileNames: string[] = [];
         for (const file of files) {
             this.validateFile(file);
         }
+
+        let fileNamesPromises = [];
         for (const file of files) {
             try {
-                let filename = await this.saveFile(file);
-                fileNames.push(filename);
+                fileNamesPromises.push(this.saveFile(file));
             } catch {
-                throw new HttpException("Error while saving file with name " + file.originalname, HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new InternalServerErrorException("Error while saving file with name " + file.originalname);
             }
         }
-        return fileNames;
+
+        return Promise.all(fileNamesPromises);
     }
 
     async createFile(file): Promise<string> {
@@ -37,7 +44,7 @@ export class FilesService implements IFilesService {
             this.validateFile(file);
             return await this.saveFile(file);
         } catch {
-            throw new HttpException("Error while saving file", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new InternalServerErrorException("Error while saving file");
         }
     }
 
@@ -54,7 +61,7 @@ export class FilesService implements IFilesService {
 
     private validateFile(file) {
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif|mp4|mov)$/)) {
-            throw new HttpException("Filetype is invalid. Allowed filetypes: jpg, jpeg, png, gif, mp4, mov", HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+            throw new UnsupportedMediaTypeException("Filetype is invalid. Allowed filetypes: jpg, jpeg, png, gif, mp4, mov");
         }
     }
 }

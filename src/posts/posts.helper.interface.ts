@@ -1,9 +1,9 @@
-import { Post } from "../schemas/posts.schema";
+import { Post } from "./posts.schema";
 import { GetPostDetailedDataDto, GetPostDto } from "./posts.dtos";
 
 
 export interface IPostsHelper {
-    getNewestPosts(limit: number | null, from: number | null): Promise<Post[]>;
+    getNewestPosts(limit: number | null, skip: number | null): Promise<Post[]>;
 
     getPostById(id: string): Promise<Post>;
 

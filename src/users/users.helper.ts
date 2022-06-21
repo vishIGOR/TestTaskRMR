@@ -1,9 +1,10 @@
 import { IUsersHelper } from "./users.helper.interface";
-import { User } from "../schemas/users.schema";
+import { User } from "./users.schema";
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { pbkdf2Sync, randomBytes } from "crypto";
+import { UnexpectedDatabaseError } from "../errors/errors.helper";
 
 @Injectable()
 export class UsersHelper implements IUsersHelper {
@@ -13,47 +14,42 @@ export class UsersHelper implements IUsersHelper {
     async getUserById(id: string): Promise<User> {
         let user;
         try {
-            user = await this._userModel.findById(id).exec();
+            user = this._userModel.findById(id).exec();
+            return await user;
         } catch (error) {
-            throw new InternalServerErrorException(error);
+            throw new UnexpectedDatabaseError();
         }
-
-        return user;
     }
 
     async getUserByEmail(email: string): Promise<User> {
         let user;
         try {
-            user = await this._userModel.findOne({ "email": email }).exec();
+            user = this._userModel.findOne({ "email": email }).exec();
+            return await user;
         } catch (error) {
-            throw new InternalServerErrorException(error);
+            throw new UnexpectedDatabaseError();
         }
-
-        return user;
     }
 
     async getUserByUsername(username: string): Promise<User> {
         let user;
         try {
-            user = await this._userModel.findOne({ "username": username }).exec();
+            user = this._userModel.findOne({ "username": username }).exec();
+            return await user;
         } catch (error) {
-            throw new InternalServerErrorException(error);
+            throw new UnexpectedDatabaseError();
         }
-
-        return user;
     }
 
     async getUserByRefreshToken(token: string): Promise<User> {
         let user;
         try {
-            user = await this._userModel.findOne({ "refreshToken": token }).exec();
+            user = this._userModel.findOne({ "refreshToken": token }).exec();
+            return await user;
         } catch (error) {
-            throw new InternalServerErrorException(error);
+            throw new UnexpectedDatabaseError();
         }
-
-        return user;
     }
-
 
     setPassword(user: User, password: string): void {
         user.salt = randomBytes(16).toString("hex");

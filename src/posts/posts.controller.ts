@@ -3,7 +3,6 @@ import {
     Controller,
     Delete,
     Get,
-    HttpException,
     HttpStatus,
     Inject,
     Param,
@@ -15,9 +14,9 @@ import {
     Query,
     BadRequestException, UploadedFiles
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { InjectConnection } from "@nestjs/mongoose";
-import { Connection, Schema as MongooseSchema } from "mongoose";
+import { Connection } from "mongoose";
 import { IPostsService } from "./posts.service.interface";
 import { CreatePostDto, GetPostDetailedDataDto, GetPostsDataWithPaginationDto } from "./posts.dtos";
 import { Response } from "express";
@@ -38,26 +37,26 @@ export class PostsController {
     @ApiOperation({
         summary: "Get posts",
         description: "Accessible without token. But with token you can get the information about likes by current user." +
-            "\n You can control number of posts with the query parameter limit and also skip posts by query parameter from"
+            " You can control number of posts with the query parameter limit and also skip posts by query parameter skip."
     })
     @ApiResponse({
         status: 200,
-        description: "The request was processed successfully",
+        description: "The request was processed successfully.",
         type: GetPostsDataWithPaginationDto
     })
     @ApiResponse({ status: 500, description: "Unexpected server error" })
     @ApiQuery({ name: "limit", required: false })
-    @ApiQuery({ name: "from", required: false })
-    async getPosts(@Request() req, @Query("limit") limit: number, @Query("from") from: number, @Res() res: Response) {
-        if ((!isInt(limit) && limit) || (!isInt(from) && from))
-            throw new BadRequestException("Parameters 'Limit' or 'from' are not number");
+    @ApiQuery({ name: "skip", required: false })
+    async getPosts(@Request() req, @Query("limit") limit: number, @Query("skip") skip: number, @Res() res: Response) {
+        if ((!isInt(limit) && limit) || (!isInt(skip) && skip))
+            throw new BadRequestException("Parameters 'Limit' or 'skip' are not number");
 
         if (typeof limit == "string")
             limit = Number.parseInt(limit);
-        if (typeof from == "string")
-            from = Number.parseInt(from);
+        if (typeof skip == "string")
+            skip = Number.parseInt(skip);
 
-        let postDtosWithPagination = await this._postsService.getPosts(req.userId, limit, from);
+        let postDtosWithPagination = await this._postsService.getPosts(req.userId, limit, skip);
         return res.status(HttpStatus.OK).send(postDtosWithPagination);
     }
 
@@ -71,7 +70,6 @@ export class PostsController {
             "for uploading files and body parameters at the same time (I know about one but it's a crutch and this " +
             "solution conflicts with OOP."
     })
-    @ApiConsumes("multipart/form-data")
     @ApiResponse({
         status: 201,
         description: "The post was created successfully",
@@ -79,14 +77,15 @@ export class PostsController {
     })
     @ApiResponse({ status: 400, description: "Some validation error" })
     @ApiResponse({ status: 401, description: "User is not authorized" })
+    @ApiResponse({ status: 415, description: "Filetype is invalid. Allowed filetypes: jpg, jpeg, png, gif, mp4, mov" })
     @ApiResponse({ status: 500, description: "Unexpected server error" })
     async createPost(@Request() req, @Body() createPostDto: CreatePostDto, @UploadedFiles() files, @Res() res: Response) {
         const session = await this._mongoConnection.startSession();
 
         let createdPost = await this._postsService.createPost(req.userId, createPostDto, files, session);
-        return res.status(HttpStatus.CREATED).send(createdPost);
-
         await session.endSession();
+
+        return res.status(HttpStatus.CREATED).send(createdPost);
     }
 
     @UseGuards(GetIdFromAuthGuard)
@@ -140,9 +139,9 @@ export class PostsController {
         const session = await this._mongoConnection.startSession();
 
         await this._postsService.likePost(req.userId, id, session);
-        return res.status(HttpStatus.OK).send();
-
         await session.endSession();
+
+        return res.status(HttpStatus.OK).send();
     }
 
 }

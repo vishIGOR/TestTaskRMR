@@ -6,7 +6,6 @@ import {
     InternalServerErrorException,
     NestInterceptor
 } from "@nestjs/common";
-import { ValidationError } from "class-validator";
 
 @Injectable()
 export class ServerErrorsInterceptor implements NestInterceptor {

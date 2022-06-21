@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { ILikesHelper } from "./likes.helper.interface";
 import { LikesHelper } from "./likes.helper";
 import { MongooseModule } from "@nestjs/mongoose";
-import { Like, LikeSchema } from "../schemas/likes.schema";
+import { Like, LikeSchema } from "./likes.schema";
 import { FilesModule } from "../files/files.module";
 import { ErrorsModule } from "../errors/errors.module";
 

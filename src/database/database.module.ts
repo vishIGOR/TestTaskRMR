@@ -1,7 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { DatabaseConfigService } from "./database.config";
 
-
 @Global()
 @Module({
     providers: [

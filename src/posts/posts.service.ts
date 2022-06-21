@@ -1,5 +1,4 @@
 import {
-    BadRequestException,
     ForbiddenException,
     Inject,
     Injectable,
@@ -7,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { IPostsService } from "./posts.service.interface";
 import { InjectModel } from "@nestjs/mongoose";
-import { Post, SitePreview } from "../schemas/posts.schema";
+import { Post, SitePreview } from "./posts.schema";
 import { ClientSession, Model, Schema } from "mongoose";
 import {
     CreatePostDto,
@@ -20,7 +19,7 @@ import { IFilesService } from "../files/files.service.interface";
 import { IPostsHelper } from "./posts.helper.interface";
 import { ILikesHelper } from "../likes/likes.helper.interface";
 import { IWebscrapingHelper } from "../webscraping/webscraping.helper.interface";
-import { isInt } from "class-validator";
+import { UnexpectedDatabaseError } from "../errors/errors.helper";
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -81,7 +80,7 @@ export class PostsService implements IPostsService {
         try {
             post = await post.save({ session });
         } catch (error) {
-            throw new InternalServerErrorException(error);
+            throw new UnexpectedDatabaseError();
         }
 
         return this._postsHelper.getPostDetailedDataDtoFromModel(post);
@@ -95,39 +94,53 @@ export class PostsService implements IPostsService {
         if (post.authorId.toString() !== userId) {
             throw new ForbiddenException("Authorized user isn't an author of this post");
         }
-        try {
-            let fileNames = post.fileNames;
-            await this._postModel.findByIdAndDelete(postId);
-            for (const fileName of fileNames) {
-                await this._filesService.deleteFile(fileName);
-            }
-        } catch (error) {
-            throw new InternalServerErrorException(error);
+
+        await this._postsHelper.deletePostById(postId);
+
+        let promises = [];
+
+        let fileNames = post.fileNames;
+        for (const fileName of fileNames) {
+            promises.push(this._filesService.deleteFile(fileName));
         }
 
+        promises.push(this._likesHelper.deleteLikes(postId));
+
+        await Promise.all(promises);
     }
 
-    async getPosts(userId: string, limit: number = null, from: number = 0): Promise<GetPostsDataWithPaginationDto> {
+    async getPosts(userId: string, limit: number = null, skip: number = 0): Promise<GetPostsDataWithPaginationDto> {
+        if (!skip)
+            skip = 0;
+
         let pagesData = new PagesData();
         let postsWithPagination = new GetPostsDataWithPaginationDto();
 
-        let posts: Post[] = await this._postsHelper.getNewestPosts(limit, from);
+        let likesPromises = [];
+        let posts: Post[] = await this._postsHelper.getNewestPosts(limit, skip);
         let postDtos: GetPostDto[] = [];
         for (const post of posts) {
             let currentPostDto = this._postsHelper.getPostDtoFromModel(post);
-            if (await this._likesHelper.isLikeExists(userId, post._id))
-                currentPostDto.isLikedByCurrentUser = true;
+            likesPromises.push(this._likesHelper.isLikeExists(userId, post._id));
             postDtos.push(currentPostDto);
         }
 
         if (limit) {
             let numberOfPosts = await this._postsHelper.getNumberOfPosts();
-            pagesData.totalNumberOfPages = numberOfPosts / limit;
-            pagesData.nextSkip = limit + from < numberOfPosts ? limit + from : null;
+            // using limit as the size of our pages
+            pagesData.currentPage = Math.floor(skip / limit) + 1;
+            pagesData.totalNumberOfPages = Math.floor(numberOfPosts / limit);
+            pagesData.nextSkip = limit + skip < numberOfPosts ? limit + skip : null;
         }
 
-        postsWithPagination.posts = postDtos;
         postsWithPagination.pagesData = pagesData;
+        postsWithPagination.posts = postDtos;
+
+        let likes = await Promise.all(likesPromises);
+        for (let i = 0; i < likes.length; i++) {
+            postsWithPagination.posts[i].isLikedByCurrentUser = likes[i];
+        }
+
         return postsWithPagination;
     }
 
@@ -138,15 +151,17 @@ export class PostsService implements IPostsService {
             throw new NotFoundException("Post with this id doesn't exists");
         }
 
+        let isLiked = this._likesHelper.isLikeExists(userId, post._id);
+
         let postDto = this._postsHelper.getPostDetailedDataDtoFromModel(post);
-        if (await this._likesHelper.isLikeExists(userId, post._id))
-            postDto.isLikedByCurrentUser = true;
+        postDto.isLikedByCurrentUser = await isLiked;
+
         return postDto;
     }
 
     async likePost(userId: string, postId: string, session: ClientSession): Promise<void> {
-        let post = this._postsHelper.getPostById(postId);
-        if (!(await post)) {
+        let post = await this._postsHelper.getPostById(postId);
+        if (!post) {
             throw new NotFoundException("Post with this id doesn't exists");
         }
 
@@ -159,13 +174,7 @@ export class PostsService implements IPostsService {
             promises.push(this._likesHelper.createLike(userId, postId, session));
             promises.push(this._postsHelper.incrementLikes(postId));
         }
-        for (let promise of promises) {
-            await promise;
-        }
-    }
 
-    // private isInt(str: string): boolean {
-    //     var n = Math.floor(Number(str));
-    //     return n !== Infinity && String(n) === str && n >= 0;
-    // }
+        await Promise.all(promises);
+    }
 }
