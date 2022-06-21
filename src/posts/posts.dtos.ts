@@ -31,6 +31,8 @@ export class GetPostDetailedDataDto extends GetPostDto {
 
 export class PagesData {
     @ApiProperty()
+    currentPage: number = null;
+    @ApiProperty()
     nextSkip: number = null;
     @ApiProperty()
     totalNumberOfPages: number = null;
@@ -39,6 +41,6 @@ export class PagesData {
 export class GetPostsDataWithPaginationDto {
     @ApiProperty()
     pagesData: PagesData;
-    @ApiProperty()
+    @ApiProperty({ type: [GetPostDto] })
     posts: GetPostDto[];
 }

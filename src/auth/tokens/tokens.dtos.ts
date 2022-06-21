@@ -1,11 +1,15 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { IsNotEmpty } from "class-validator";
 
 export class RefreshTokenDto {
-    @ApiProperty()
+    @ApiProperty({
+        description: "Some refresh token from login or register's response"
+    })
+    @IsNotEmpty()
     refreshToken: string;
 }
 
-export class TokenPairDto extends RefreshTokenDto{
+export class TokenPairDto extends RefreshTokenDto {
     @ApiProperty()
     accessToken: string;
 }

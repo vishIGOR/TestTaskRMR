@@ -1,12 +1,12 @@
 import { CreatePostDto, GetPostDetailedDataDto, GetPostDto, GetPostsDataWithPaginationDto } from "./posts.dtos";
-import { ClientSession, Schema } from "mongoose";
+import { ClientSession } from "mongoose";
 
 export interface IPostsService {
     createPost(authorId: string, createPostDto: CreatePostDto, files, session: ClientSession): Promise<GetPostDetailedDataDto>;
 
     deletePost(userId: string, postId: string): Promise<void>;
 
-    getPosts(userId: string, limit: number | null, from: number | null): Promise<GetPostsDataWithPaginationDto>;
+    getPosts(userId: string, limit: number | null, skip: number | null): Promise<GetPostsDataWithPaginationDto>;
 
     getPostDetailedData(userId: string, postId: string): Promise<GetPostDetailedDataDto>;
 

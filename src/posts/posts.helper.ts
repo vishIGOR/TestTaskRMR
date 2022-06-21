@@ -1,11 +1,12 @@
 import { Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { IPostsHelper } from "./posts.helper.interface";
-import { Post } from "../schemas/posts.schema";
+import { Post } from "./posts.schema";
 import { GetPostDetailedDataDto, GetPostDto } from "./posts.dtos";
 import { InjectModel } from "@nestjs/mongoose";
-import { Error, Model } from "mongoose";
+import { Model } from "mongoose";
 import { IErrorsHelper } from "../errors/errors.helper.interface";
 import { SitePreviewDataDto } from "../webscraping/webscraping.dtos";
+import { UnexpectedDatabaseError } from "../errors/errors.helper";
 
 
 @Injectable()
@@ -17,11 +18,55 @@ export class PostsHelper implements IPostsHelper {
     async getPostById(id: string): Promise<Post> {
         let post;
         try {
-            post = await this._postModel.findById(id);
+            post = this._postModel.findById(id);
+            return await post;
         } catch (error) {
             return this._errorsHelper.returnNullWhenCaughtCastError(error);
         }
-        return post;
+    }
+
+    async deletePostById(id: string): Promise<void> {
+        try {
+            await this._postModel.findByIdAndDelete(id);
+        } catch (error) {
+            this._errorsHelper.throwInvalidIdExceptionWhenCaughtCastError(error);
+        }
+    }
+
+    async getNewestPosts(limit: number | null = null, skip: number | null = 0): Promise<Post[]> {
+        let posts;
+        try {
+            if (limit !== null) {
+                posts = this._postModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
+            } else {
+                posts = this._postModel.find().sort({ createdAt: -1 }).skip(skip);
+            }
+            return await posts;
+        } catch (error) {
+            throw new UnexpectedDatabaseError();
+        }
+    }
+
+    async decrementLikes(id: string): Promise<void> {
+        let post = this.getPostById(id);
+        try {
+            await this._postModel.findOneAndUpdate({ _id: id }, { likes: (await post).likes - 1 });
+        } catch (error) {
+            this._errorsHelper.throwInvalidIdExceptionWhenCaughtCastError(error);
+        }
+    }
+
+    async incrementLikes(id: string): Promise<void> {
+        let post = this.getPostById(id);
+        try {
+            await this._postModel.findOneAndUpdate({ _id: id }, { likes: (await post).likes + 1 });
+        } catch (error) {
+            this._errorsHelper.throwInvalidIdExceptionWhenCaughtCastError(error);
+        }
+    }
+
+    async getNumberOfPosts(): Promise<number> {
+        return this._postModel.count();
     }
 
     getPostDetailedDataDtoFromModel(post: Post): GetPostDetailedDataDto {
@@ -54,48 +99,7 @@ export class PostsHelper implements IPostsHelper {
         dto.message = post.message;
         dto.fileNames = post.fileNames;
         dto.likes = post.likes;
+
         return dto;
-    }
-
-    deletePostById(id: string): Promise<void> {
-        return Promise.resolve(undefined);
-    }
-
-    async getNewestPosts(limit: number | null = null, from: number | null = 0): Promise<Post[]> {
-        let posts;
-        try {
-            if (limit !== null) {
-                posts = await this._postModel.find().sort({ createdAt: -1 }).skip(from).limit(limit);
-            } else {
-                posts = await this._postModel.find().sort({ createdAt: -1 }).skip(from);
-            }
-        } catch (error) {
-            throw new InternalServerErrorException(error);
-        }
-
-        return posts;
-    }
-
-    async decrementLikes(id: string): Promise<void> {
-        let post = this.getPostById(id);
-        try {
-            await this._postModel.findOneAndUpdate({ _id: id }, { likes: (await post).likes - 1 });
-        } catch (error) {
-            this._errorsHelper.throwInvalidIdExceptionWhenCaughtCastError(error);
-        }
-
-    }
-
-    async incrementLikes(id: string): Promise<void> {
-        let post = this.getPostById(id);
-        try {
-            await this._postModel.findOneAndUpdate({ _id: id }, { likes: (await post).likes + 1 });
-        } catch (error) {
-            this._errorsHelper.throwInvalidIdExceptionWhenCaughtCastError(error);
-        }
-    }
-
-    async getNumberOfPosts(): Promise<number> {
-        return this._postModel.count();
     }
 }

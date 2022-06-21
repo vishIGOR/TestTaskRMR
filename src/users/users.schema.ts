@@ -15,8 +15,6 @@ export class User extends Document {
     password: string;
     @Prop({ type: String })
     refreshToken: string;
-    // @Prop({ type:  [MongooseSchema.Types.ObjectId], ref: Post.name})
-    // likedPosts: [MongooseSchema.Types.ObjectId];
 }
 
 const schema = SchemaFactory.createForClass(User);

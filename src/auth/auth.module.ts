@@ -4,7 +4,7 @@ import { AuthController } from "./auth.controller";
 import { ITokensHelper } from "./tokens/tokens.helper.interface";
 import { TokensHelper } from "./tokens/tokens.helper";
 import { MongooseModule } from "@nestjs/mongoose";
-import { User, UserSchema } from "../schemas/users.schema";
+import { User, UserSchema } from "../users/users.schema";
 import { JwtModule } from "@nestjs/jwt";
 import { GetIdFromAuthGuard, JwtAuthGuard } from "./auth.guards";
 import { IAuthService } from "./auth.service.interface";
