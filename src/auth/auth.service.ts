@@ -1,4 +1,11 @@
-import { ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import {
+    BadRequestException,
+    ConflictException,
+    Inject,
+    Injectable,
+    InternalServerErrorException,
+    NotFoundException
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { User } from "../users/users.schema";
 import { ClientSession, Model } from "mongoose";
@@ -7,6 +14,7 @@ import { IAuthService } from "./auth.service.interface";
 import { RefreshTokenDto, TokenPairDto } from "./tokens/tokens.dtos";
 import { IUsersHelper } from "../users/users.helper.interface";
 import { ITokensHelper } from "./tokens/tokens.helper.interface";
+import { UnexpectedDatabaseError } from "../errors/errors.helper";
 
 @Injectable()
 export class AuthService implements IAuthService{
@@ -43,12 +51,12 @@ export class AuthService implements IAuthService{
     async registerUser(userDto: RegisterUserDto, session: ClientSession): Promise<TokenPairDto> {
         let user = await this._usersHelper.getUserByEmail(userDto.email);
         if (user) {
-            throw new ConflictException("User already exists");
+            throw new BadRequestException("User already exists");
         }
 
         user = await this._usersHelper.getUserByUsername(userDto.username);
         if (user) {
-            throw new ConflictException("User already exists");
+            throw new BadRequestException("User already exists");
         }
 
         user = new this._userModel({
@@ -60,11 +68,7 @@ export class AuthService implements IAuthService{
         try {
             user = await user.save({ session });
         } catch (error) {
-            throw new InternalServerErrorException(error);
-        }
-
-        if (!user) {
-            throw new ConflictException("User not created");
+            throw new UnexpectedDatabaseError();
         }
 
         return await this.generateTokenPair(user);
@@ -76,7 +80,7 @@ export class AuthService implements IAuthService{
         try {
             user = await this._userModel.findByIdAndUpdate({ _id: user._id }, { refreshToken: this._tokensHelper.generateRefreshToken() }, { new: true });
         } catch (error) {
-            throw new InternalServerErrorException(error);
+            throw new UnexpectedDatabaseError();
         }
 
         tokenPair.refreshToken = user.refreshToken;

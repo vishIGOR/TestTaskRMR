@@ -105,3 +105,9 @@ dist
 
 # ignore the .idea folder
 .idea/
+
+# add unused dockerfiles
+init-mongo.sh
+.dockerignore
+Dockerfile
+docker-compose.yml

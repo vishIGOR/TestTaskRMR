@@ -6,6 +6,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { IErrorsHelper } from "../errors/errors.helper.interface";
 import { SitePreviewDataDto } from "../webscraping/webscraping.dtos";
+import { UnexpectedDatabaseError } from "../errors/errors.helper";
 
 
 @Injectable()
@@ -18,10 +19,10 @@ export class PostsHelper implements IPostsHelper {
         let post;
         try {
             post = this._postModel.findById(id);
+            return await post;
         } catch (error) {
             return this._errorsHelper.returnNullWhenCaughtCastError(error);
         }
-        return await post;
     }
 
     async deletePostById(id: string): Promise<void> {
@@ -40,11 +41,10 @@ export class PostsHelper implements IPostsHelper {
             } else {
                 posts = this._postModel.find().sort({ createdAt: -1 }).skip(skip);
             }
+            return await posts;
         } catch (error) {
-            throw new InternalServerErrorException("Unexpected database error");
+            throw new UnexpectedDatabaseError();
         }
-
-        return await posts;
     }
 
     async decrementLikes(id: string): Promise<void> {

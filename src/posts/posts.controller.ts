@@ -83,9 +83,9 @@ export class PostsController {
         const session = await this._mongoConnection.startSession();
 
         let createdPost = await this._postsService.createPost(req.userId, createPostDto, files, session);
-        return res.status(HttpStatus.CREATED).send(createdPost);
-
         await session.endSession();
+
+        return res.status(HttpStatus.CREATED).send(createdPost);
     }
 
     @UseGuards(GetIdFromAuthGuard)
@@ -139,9 +139,9 @@ export class PostsController {
         const session = await this._mongoConnection.startSession();
 
         await this._postsService.likePost(req.userId, id, session);
-        return res.status(HttpStatus.OK).send();
-
         await session.endSession();
+
+        return res.status(HttpStatus.OK).send();
     }
 
 }

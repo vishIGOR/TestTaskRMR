@@ -19,6 +19,7 @@ import { IFilesService } from "../files/files.service.interface";
 import { IPostsHelper } from "./posts.helper.interface";
 import { ILikesHelper } from "../likes/likes.helper.interface";
 import { IWebscrapingHelper } from "../webscraping/webscraping.helper.interface";
+import { UnexpectedDatabaseError } from "../errors/errors.helper";
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -79,7 +80,7 @@ export class PostsService implements IPostsService {
         try {
             post = await post.save({ session });
         } catch (error) {
-            throw new InternalServerErrorException("Unexpected database error");
+            throw new UnexpectedDatabaseError();
         }
 
         return this._postsHelper.getPostDetailedDataDtoFromModel(post);
@@ -126,6 +127,7 @@ export class PostsService implements IPostsService {
 
         if (limit) {
             let numberOfPosts = await this._postsHelper.getNumberOfPosts();
+            // using limit as the size of our pages
             pagesData.currentPage = Math.floor(skip / limit) + 1;
             pagesData.totalNumberOfPages = Math.floor(numberOfPosts / limit);
             pagesData.nextSkip = limit + skip < numberOfPosts ? limit + skip : null;

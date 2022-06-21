@@ -26,15 +26,11 @@ export class AuthController {
     @ApiResponse({ status: 500, description: "Unexpected server error" })
     async register(@Body() userDto: RegisterUserDto, @Res() res: Response) {
         const session = await this._mongoConnection.startSession();
-        // session.startTransaction();
 
         let tokenPair: TokenPairDto = await this._authService.registerUser(userDto, session);
-        // await session.commitTransaction();
-        return res.status(HttpStatus.CREATED).send(tokenPair);
-
-        // await session.abortTransaction();
         await session.endSession();
 
+        return res.status(HttpStatus.CREATED).send(tokenPair);
     }
 
     @Post("/login")
@@ -53,9 +49,9 @@ export class AuthController {
         const session = await this._mongoConnection.startSession();
 
         let tokenPair: TokenPairDto = await this._authService.loginUser(userDto, session);
-        return res.status(HttpStatus.OK).send(tokenPair);
-
         await session.endSession();
+
+        return res.status(HttpStatus.OK).send(tokenPair);
     }
 
     @Post("/refresh")
@@ -75,8 +71,8 @@ export class AuthController {
         const session = await this._mongoConnection.startSession();
 
         let tokenPair: TokenPairDto = await this._authService.refreshToken(refreshTokenDto, session);
-        return res.status(HttpStatus.OK).send(tokenPair);
-
         await session.endSession();
+
+        return res.status(HttpStatus.OK).send(tokenPair);
     }
 }

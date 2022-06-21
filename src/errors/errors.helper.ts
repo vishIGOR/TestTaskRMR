@@ -8,20 +8,27 @@ export class ErrorsHelper implements IErrorsHelper {
         if (error instanceof Error.CastError) {
             return null;
         }
-        throw new InternalServerErrorException("Unexpected database error");
+        throw new UnexpectedDatabaseError();
     }
 
     returnFalseWhenCaughtCastError(error): boolean {
         if (error instanceof Error.CastError) {
             return false;
         }
-        throw new InternalServerErrorException("Unexpected database error");
+        throw new UnexpectedDatabaseError();
     }
 
     throwInvalidIdExceptionWhenCaughtCastError(error) {
         if (error instanceof Error.CastError) {
             throw new BadRequestException("Invalid id");
         }
-        throw new InternalServerErrorException("Unexpected database error");
+        throw new UnexpectedDatabaseError();
+    }
+
+}
+
+export class UnexpectedDatabaseError extends InternalServerErrorException {
+    constructor() {
+        super("Unexpected database error");
     }
 }
